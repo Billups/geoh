@@ -15,7 +15,7 @@ def geohashes(geojson={}, precision=6, start_precision=2):
 
     precision_init = precision
     if precision_init >= 9:
-        precision = precision - 1
+        precision -= 1
 
     p = min(start_precision, precision)
 
@@ -28,18 +28,18 @@ def geohashes(geojson={}, precision=6, start_precision=2):
         _geohashes = geohashes_polygon_intersection(polygon, _geohashes)
         p += 1
 
-    if precision_init >= 9:
-        inside_geohashes_coarse =  geohashes_polygon_within(polygon, _geohashes)
-        inside_geohashes = _generate_inner_geohashes_for_geohashes(inside_geohashes_coarse)
-
-        intersect_geohashes_coarse = list(set(_geohashes) - set(inside_geohashes_coarse))
-        intersect_geohashes = _generate_inner_geohashes_for_geohashes(intersect_geohashes_coarse)
-        intersect_geohashes = geohashes_polygon_intersection(polygon, intersect_geohashes)
-
-        return inside_geohashes + intersect_geohashes
-
-    else:
+    if precision_init < 9:
         return _geohashes
+
+    inside_geohashes_coarse =  geohashes_polygon_within(polygon, _geohashes)
+    inside_geohashes = _generate_inner_geohashes_for_geohashes(inside_geohashes_coarse)
+
+    intersect_geohashes_coarse = list(set(_geohashes) - set(inside_geohashes_coarse))
+    intersect_geohashes = _generate_inner_geohashes_for_geohashes(intersect_geohashes_coarse)
+    intersect_geohashes = geohashes_polygon_intersection(polygon, intersect_geohashes)
+
+    return inside_geohashes + intersect_geohashes
+
 
 def get_center_geohash(polygon, precision=2):
     centroid = mapping(polygon.centroid)["coordinates"]
@@ -53,6 +53,7 @@ def geohashes_polygon_intersection(polygon, geohashes=[]):
     return list(compress(geohashes, intersections))
 
 def geohashes_polygon_within(polygon, geohashes=[]):
+    """Return geohashes that are within the polygon"""
     from itertools import compress
     geoms = map(_geohash_to_shape, geohashes)
     withins = map(lambda g_h: g_h.within(polygon), geoms)
